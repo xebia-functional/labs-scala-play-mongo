@@ -47,16 +47,16 @@ Here is some more info about [deploying with Git to Heroku](https://devcenter.he
 
 ### 2. A Reactive Mongo Example with Iteratees and Websockets ###
 
-The second part of this demo showcases how play has native built in support for WebSockets and how you may use Iteratees to reactively handle data streams.
-We will be connecting to the Twitter API streaming tweets in real time and feeding the incoming stream asynchronously into a Mongo Collection.
+The second part of this demo showcases how play has native built-in support for WebSockets and how you may use Iteratees to reactively handle data streams.
+We will be connecting to the Twitter API, streaming tweets in real time and feeding the incoming stream asynchronously into a Mongo Collection.
 
 The Mongo collection is a special type of collection, [a capped collection](http://docs.mongodb.org/manual/core/capped-collections/) that may be tailed in order to receive callback notifications when there are incoming
 records added to it.
 
-We will be using Play [Iteratees and Enumerators](http://mandubian.com/2012/08/27/understanding-play2-iteratees-for-normal-humans/) to retrieve through a websocket the keywords that are going to be sent by the user and keep a constant enumerator
+We will be using Play [Iteratees and Enumerators](http://mandubian.com/2012/08/27/understanding-play2-iteratees-for-normal-humans/) to retrieve the keywords that are going to be sent by the user through a websocket and keep a constant enumerator
 over the capped collection that broadcasts incoming records back to the HTML client.
 
-First we will setup the MongoLab addon on Heroku. The sandbox version gives you a free sandbox environment for development.
+First we will setup the MongoLab add-on on Heroku. The sandbox version gives you a free sandbox environment for development.
 
 **Setup MongoDB on Heroku**
 
@@ -102,8 +102,8 @@ Edit or create *conf/play.plugins* and register the Reactive Mongo Play plugin
 
 **Setup Twitter OAuth Boilerplate**
 
-Due to new requirements in the Twitter streaming API we need to authenticate users in order to obtain a stream from Twitter.
-The code below is just standard boilerplate over Play's builtin Oauth Support that redirects user to Twitter Auth before they use our app.
+Due to new requirements in the Twitter streaming API we need to authenticate as a user in order to obtain a stream from Twitter.
+The code below is just standard boilerplate over Play's builtin Oauth Support that redirects the user to Twitter Auth before they use the app.
 
 *controllers/Twitter.scala*
 
@@ -211,11 +211,11 @@ object MongoUtils {
 
 ```
 
-In the next part we are gonna create a controller that uses Play's Iteratees to consume the Twitter Stream and forwards any incoming Tweets into Mongo.
+In the next part we are going to create a controller that uses Play's Iteratees to consume the Twitter Stream and forward any incoming Tweets into Mongo.
 We are also going to use Iteratees and Websockets to consume user input and enumerate the capped collection that will continuously notify the browser of
 any inserted Tweets.
 
-Not that you could just use the Iteratee to stream back to the browser from Twitter but we use MongoDB not just to store tweets but to also notify any other
+Note that you could just use the Iteratee to stream back to the browser from Twitter but we use MongoDB not just to store tweets but to also notify any other
 clients observing the collection
 
 *controllers/Application.scala*
@@ -297,7 +297,7 @@ object Application extends Controller {
 
 **Setup routes**
 
-Finally we just setup the routes where our controllers methods will be mapped to the outside world and exposed for our
+Finally we just setup the routes where our controller methods will be mapped to the outside world and exposed for our
 HTML client to connect to
 
 *conf/routes*
@@ -311,7 +311,7 @@ GET     /watchTweets                controllers.Application.watchTweets
 
 **HTML UI**
 
-Nothing interesting here, just a bunch of boilerplate with a Bootstrap basic UI that binds HTML actions to Websockets calls all contained in a ScalaTemplate.
+Nothing interesting here, just a bunch of boilerplate HTML with a Bootstrap basic UI that binds HTML actions to Websockets calls all contained in a ScalaTemplate.
 The websocket sends keywords and receives tweets from the server in JSON format appending the received results to a list of tweets streamed so far.
 As a side effect since everyone accessing this app from a Browser has an open websocket to the server and all clients would be observing the same Mongo collection
 They will all see the same results realtime streaming before their eyes.
@@ -420,8 +420,8 @@ Optionally you may setup your IDE for Scala and Play Development. We use [Intell
 play idea
 ```
 
-While not a production ready app this basic example illustrates non blocking, reactive data flow from a remote datasource and back to a client and the use of Iteratees and Enumerators to
-consume streams of data as well as how simple it is to get started developing web apps with Scala Play and Heroku.
+While not a production ready app, this basic example illustrates non blocking, reactive data flow from a remote datasource and back to a client and the use of Iteratees and Enumerators to
+consume streams of data as well as how simple it is to get started developing web apps with Scala, Play and Heroku.
 
 # License
 
