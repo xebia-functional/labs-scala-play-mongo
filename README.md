@@ -1,6 +1,4 @@
-Play2 Scala, Reactive Mongo, WebSockets Demo
-==============================================
-
+## A Play2 Scala Websockets + Reactive Mongo Demo ##
 
 This is a demo app composed of a Play2 web app featuring the use of WebSockets, Http Streaming with the Twitter API and reactive streaming
 to Mongo capped collections part of a tech talk series about Scala at the [XII Betabeers Cádiz aniversary](http://betabeers.com/community/betabeers-cadiz-18/)
@@ -8,7 +6,7 @@ to Mongo capped collections part of a tech talk series about Scala at the [XII B
 The talk was composed of two parts. A demo of deploying a Play app to Heroku and another demo showing how Play Iteratees can be used to Stream
 data and combined with Websockets.
 
-# 1. Play and Heroku
+### 1. Play and Heroku ###
 
 The first part of the talk was about setting a Play2 Scala App and deploying it to heroku.
 These steps assume you have already installed [Play2](http://www.playframework.com/download) and the [Heroku toolbelt](https://toolbelt.heroku.com/)
@@ -47,7 +45,7 @@ changes.
 
 Here is some more info about [deploying with Git to Heroku](https://devcenter.heroku.com/articles/git) and [Play support in Heroku](https://devcenter.heroku.com/articles/play-support)
 
-2. A Reactive Mongo Example with Iteratees and Websockets
+### 2. A Reactive Mongo Example with Iteratees and Websockets ###
 
 The second part of this demo showcases how play has native built in support for WebSockets and how you may use Iteratees to reactively handle data streams.
 We will be connecting to the Twitter API streaming tweets in real time and feeding the incoming stream asynchronously into a Mongo Collection.
@@ -60,7 +58,7 @@ over the capped collection that broadcasts incoming records back to the HTML cli
 
 First we will setup the MongoLab addon on Heroku. The sandbox version gives you a free sandbox environment for development.
 
-**Setup MongoDB in Heroku & Play**
+**Setup MongoDB on Heroku**
 
 ```sh
 heroku addons:add mongolab:sandbox
