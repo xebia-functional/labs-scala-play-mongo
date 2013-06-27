@@ -100,7 +100,7 @@ Edit or create *conf/play.plugins* and register the Reactive Mongo Play plugin
 400:play.modules.reactivemongo.ReactiveMongoPlugin
 ```
 
-** Setup Twitter OAuth Boilerplate **
+**Setup Twitter OAuth Boilerplate**
 
 Due to new requirements in the Twitter streaming API we need to authenticate users in order to obtain a stream from Twitter.
 The code below is just standard boilerplate over Play's builtin Oauth Support that redirects user to Twitter Auth before they use our app.
@@ -163,7 +163,7 @@ object Twitter extends Controller {
 
 ```
 
-** The Gist **
+**The Gist**
 
 Now the most important part. First we need to create or obtain a Future reference to a Mongo capped collection that can
 be tailed to obtain callbacks when new records are inserted into the collection.
