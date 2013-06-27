@@ -1,16 +1,12 @@
-# A Scala + Play2 + Reactive Mongo + WebSockets + Iteratees demo app
+Play2 Scala, Reactive Mongo, WebSockets Demo
+==============================================
 
-This app is part of Tech talk given at the XII Betabeers Cadiz Anniversary.
 
-It is a demo app composed of a Play2 web app featuring the use of WebSockets, Http Streaming with the Twitter API and reactive streaming
-to Mongo capped collections.
+This is a demo app composed of a Play2 web app featuring the use of WebSockets, Http Streaming with the Twitter API and reactive streaming
+to Mongo capped collections part of a tech talk series about Scala at the [XII Betabeers Cádiz aniversary](http://betabeers.com/community/betabeers-cadiz-18/)
 
-To simply run this app clone this repo locally and providing you have already installed [Play](http://www.playframework.com/download)
-and [MongoDB](http://www.mongodb.org/downloads) you may run this app by simply running the following command:
-
-```
-play run
-```
+The talk was composed of two parts. A demo of deploying a Play app to Heroku and another demo showing how Play Iteratees can be used to Stream
+data and combined with Websockets.
 
 # 1. Play and Heroku
 
