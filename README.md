@@ -1,3 +1,5 @@
+# A Scala + Play2 + Reactive Mongo + WebSockets + Iteratees demo app
+
 This app is part of Tech talk given at the XII Betabeers Cadiz Anniversary.
 
 It is a demo app composed of a Play2 web app featuring the use of WebSockets, Http Streaming with the Twitter API and reactive streaming
@@ -10,27 +12,25 @@ and [MongoDB](http://www.mongodb.org/downloads) you may run this app by simply r
 play run
 ```
 
-1. Play and Heroku
+# 1. Play and Heroku
 
 The first part of the talk was about setting a Play2 Scala App and deploying it to heroku.
 These steps assume you have already installed [Play2](http://www.playframework.com/download) and the [Heroku toolbelt](https://toolbelt.heroku.com/)
 
-#Setup the app
-
-Create a play app
+**Create a play app**
 
 ```sh
 play new <app_name>
 ```
 
-Run your app
+**Run it**
 
 ```sh
 cd <app_name>
 play run
 ```
 
-Add it to Git
+**Add it to Git**
 
 ```sh
 git init
@@ -38,7 +38,7 @@ git add .
 git commit -m "First deployment"
 ```
 
-Deploy to Heroku
+**Deploy to Heroku**
 
 ```sh
 heroku create
@@ -49,41 +49,45 @@ And then you are done. Your app is being deployed to Heroku as your are reading 
 Heroku uses a git remote to keep track of your deployment and you just push changes onto it any time you want to deploy new
 changes.
 
-Here is some more info for [deploying with Git to Heroku](https://devcenter.heroku.com/articles/git) and [Play support in Heroku](https://devcenter.heroku.com/articles/play-support)
+Here is some more info about [deploying with Git to Heroku](https://devcenter.heroku.com/articles/git) and [Play support in Heroku](https://devcenter.heroku.com/articles/play-support)
 
-2. A Reactive Mongo Example with Iteratees and
+2. A Reactive Mongo Example with Iteratees and Websockets
 
 The second part of this demo showcases how play has native built in support for WebSockets and how you may use Iteratees to reactively handle data streams.
-We will be connecting to the Twitter API streaming tweets in real time and feeding them asynchronously to a Mongo Collection.
+We will be connecting to the Twitter API streaming tweets in real time and feeding the incoming stream asynchronously into a Mongo Collection.
 
-The Mongo collection is a special type of collection. [A capped collection](http://docs.mongodb.org/manual/core/capped-collections/) that may be tailed in order to receive callback notifications when there are incoming
+The Mongo collection is a special type of collection, [a capped collection](http://docs.mongodb.org/manual/core/capped-collections/) that may be tailed in order to receive callback notifications when there are incoming
 records added to it.
 
 We will be using Play [Iteratees and Enumerators](http://mandubian.com/2012/08/27/understanding-play2-iteratees-for-normal-humans/) to retrieve through a websocket the keywords that are going to be sent by the user and keep a constant enumerator
 over the capped collection that broadcasts incoming records back to the HTML client.
 
-#Setup Mongo deps
-
 First we will setup the MongoLab addon on Heroku. The sandbox version gives you a free sandbox environment for development.
+
+**Setup MongoDB in Heroku & Play**
 
 ```sh
 heroku addons:add mongolab:sandbox
 ```
 
-To access our MongoDB server we will be using the [Reactive Mongo Driver](http://reactivemongo.org/) and [Plugin](https://github.com/zenexity/Play-ReactiveMongo)
+To access our MongoDB server we will be using the [Reactive Mongo Driver](http://reactivemongo.org/) and the [Reactive Mongo Play Plugin](https://github.com/zenexity/Play-ReactiveMongo)
 
 Edit conf/application.conf and add the mongodb.uri property pointing to the ${MONGOLAB_URI} env variable.
-Note that you may use the same uri in localhost by creating an env variable using the value provided by the heroku config for your app
+Note that you may use the same uri in localhost by creating an environment variable using the value provided by the Heroku config in your app
+
+Run the following command to obtain your app config including the MongoLab URI used to connect to MongoDB
 
 ```
 heroku config
 ```
 
+Then add the property value in your app config
+
 ```
 mongodb.uri = ${MONGOLAB_URI}
 ```
 
-Edit project/Build.scala and add the Reactive Mongo Play Plugin Dependencies. Play uses [SBT](http://www.scala-sbt.org/), similar to Maven, SBT downloads all dependencies
+Edit *project/Build.scala* and add the Reactive Mongo Play Plugin Dependencies. Play uses [SBT](http://www.scala-sbt.org/), similar to Maven, SBT downloads all dependencies
 from Maven and Ivy compatible repositories
 
 ```scala
@@ -96,18 +100,18 @@ val main = play.Project(appName, appVersion, appDependencies).settings(
 )
 ```
 
-Edit or create conf/play.plugins and register the Reactive Mongo Play plugin
+Edit or create *conf/play.plugins* and register the Reactive Mongo Play plugin
 
 ```
 400:play.modules.reactivemongo.ReactiveMongoPlugin
 ```
 
-#Twitter OAuth Boilerplate
+** Setup Twitter OAuth Boilerplate **
 
 Due to new requirements in the Twitter streaming API we need to authenticate users in order to obtain a stream from Twitter.
 The code below is just standard boilerplate over Play's builtin Oauth Support that redirects user to Twitter Auth before they use our app.
 
-controllers/Twitter.scala
+*controllers/Twitter.scala*
 
 ```scala
 package controllers
@@ -165,11 +169,15 @@ object Twitter extends Controller {
 
 ```
 
-#The Gist
+** The Gist **
 
 Now the most important part. First we need to create or obtain a Future reference to a Mongo capped collection that can
 be tailed to obtain callbacks when new records are inserted into the collection.
-We are using a simple util object that can give us any collection as a Future capped collection
+We are using a simple util object that can give us any collection as a Future capped collection. 
+
+Converting an existing collection to a capped collection may be a risky operation that can cause data loss, **proceed at your own risk**.
+
+*utils/MongoUtils.scala*
 
 ```scala
 
@@ -209,12 +217,14 @@ object MongoUtils {
 
 ```
 
-In the next part we are gonna create a controller that uses Play's Iteratees to consume the Twitter Stream and forward any incoming Tweets into Mongo.
+In the next part we are gonna create a controller that uses Play's Iteratees to consume the Twitter Stream and forwards any incoming Tweets into Mongo.
 We are also going to use Iteratees and Websockets to consume user input and enumerate the capped collection that will continuously notify the browser of
 any inserted Tweets.
 
 Not that you could just use the Iteratee to stream back to the browser from Twitter but we use MongoDB not just to store tweets but to also notify any other
 clients observing the collection
+
+*controllers/Application.scala*
 
 ```scala
 
@@ -291,12 +301,12 @@ object Application extends Controller {
 
 ```
 
-#Setup routes
+**Setup routes**
 
-finally we just setup the routes where our controllers methods will be mapped to the outside world and exposed for our
+Finally we just setup the routes where our controllers methods will be mapped to the outside world and exposed for our
 HTML client to connect to
 
-conf/routes
+*conf/routes*
 
 ```
 GET     /                           controllers.Application.index
@@ -305,14 +315,14 @@ GET     /auth                       controllers.Twitter.authenticate()
 GET     /watchTweets                controllers.Application.watchTweets
 ```
 
-#Setup our UI
-
-app/views/index.scala.html
+**HTML UI**
 
 Nothing interesting here, just a bunch of boilerplate with a Bootstrap basic UI that binds HTML actions to Websockets calls all contained in a ScalaTemplate.
 The websocket sends keywords and receives tweets from the server in JSON format appending the received results to a list of tweets streamed so far.
 As a side effect since everyone accessing this app from a Browser has an open websocket to the server and all clients would be observing the same Mongo collection
 They will all see the same results realtime streaming before their eyes.
+
+*app/views/index.scala.html*
 
 ```html
 @()(implicit request: Request[AnyContent])
