@@ -18,7 +18,7 @@ object Twitter extends Controller {
     false)
 
   def authenticate = Action {
-    request =>
+    implicit request =>
       request.getQueryString("oauth_verifier").map {
         verifier =>
           val tokenPair = sessionTokenPair(request).get
