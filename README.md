@@ -6,6 +6,8 @@ to Mongo capped collections part of a tech talk series about Scala at the [XII B
 The talk was composed of two parts. A demo of deploying a Play app to Heroku and another demo showing how Play Iteratees can be used to Stream
 data and combined with Comet.
 
+The live demo is available at [http://bbcdz12.herokuapp.com/](http://bbcdz12.herokuapp.com/)
+
 ### 1. Play and Heroku ###
 
 The first part of the talk was about setting a Play2 Scala App and deploying it to heroku.
