@@ -26,12 +26,12 @@ object Twitter extends Controller {
           TWITTER.retrieveAccessToken(tokenPair, verifier) match {
             case Right(t) => {
               // We received the authorized tokens in the OAuth object - store it before we proceed
-              Redirect(routes.Application.index).withSession("token" -> t.token, "secret" -> t.secret)
+              Redirect(routes.Application.index()).withSession("token" -> t.token, "secret" -> t.secret)
             }
             case Left(e) => throw e
           }
       }.getOrElse(
-        TWITTER.retrieveRequestToken("http://localhost:9000/auth") match {
+        TWITTER.retrieveRequestToken(routes.Twitter.authenticate().absoluteURL()) match {
           case Right(t) => {
             // We received the unauthorized tokens in the OAuth object - store it before we proceed
             Redirect(TWITTER.redirectUrl(t.token)).withSession("token" -> t.token, "secret" -> t.secret)
