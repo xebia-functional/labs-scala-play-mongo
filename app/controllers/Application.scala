@@ -12,6 +12,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.api.QueryOpts
 import java.net.URLEncoder
 import utils.MongoUtils._
+import play.api.libs.Comet
 
 object Application extends Controller {
 
@@ -32,26 +33,23 @@ object Application extends Controller {
   }
 
   /**
-   * Websockets observing IO
+   * Comet observing IO
    */
-  def watchTweets = WebSocket.using[JsValue] { implicit request =>
+  def watchTweets(keywords : String) = Action { implicit request =>
 
-    //streamd from twitter passing the resulting stream to an Iteratee that inserts all incoming data in Mongo
-    def streamTweets(keyword : String) = WS.url(s"https://stream.twitter.com/1.1/statuses/filter.json?track=" + URLEncoder.encode(keyword, "UTF-8"))
+    Logger.debug(s"watchTweets invoked with: $keywords")
+
+    //streams from twitter passing the resulting stream to an Iteratee that inserts all incoming data in Mongo
+    WS.url(s"https://stream.twitter.com/1.1/statuses/filter.json?track=" + URLEncoder.encode(keywords, "UTF-8"))
       .sign(OAuthCalculator(Twitter.KEY, Twitter.sessionTokenPair.get))
       .postAndRetrieveStream("")(headers => Iteratee.foreach[Array[Byte]] { ba =>
       val msg = new String(ba, "UTF-8")
-      Logger.debug("received message: " + msg)
+      Logger.debug(s"received message: $msg")
       val tweet = Json.parse(msg)
       tweetsCollection.map(_.insert(tweet))
     })
 
-    //reads on the websocket for new keywords to stream
-    val in = Iteratee.foreach[JsValue] { json =>
-      streamTweets((json \ "keywords").as[String])
-    }
-
-    // Enumerates the capped collection streaming new results back to the websocket
+    // Enumerates the capped collection streaming new results back to the response
     val out = Enumerator.flatten(tweetsCollection.map {
       collection => collection
         // we want all the documents
@@ -62,8 +60,7 @@ object Application extends Controller {
         .enumerate
     })
 
-    // The Websocket action expect the Input Iteratee and Output enumerator as return value
-    (in, out)
+    Ok.stream(out &> Comet(callback = "parent.cometMessage"))
 
   }
 

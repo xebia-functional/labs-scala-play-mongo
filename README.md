@@ -1,10 +1,10 @@
-## A Play2 Scala Websockets + Reactive Mongo Demo ##
+## A Play2 Scala Comet + Reactive Mongo Demo ##
 
-This is a demo app composed of a Play2 web app featuring the use of WebSockets, Http Streaming with the Twitter API and reactive streaming
+This is a demo app composed of a Play2 web app featuring the use of Comet, Http Streaming with the Twitter API and reactive streaming
 to Mongo capped collections part of a tech talk series about Scala at the [XII Betabeers Cádiz aniversary](http://betabeers.com/community/betabeers-cadiz-18/)
 
 The talk was composed of two parts. A demo of deploying a Play app to Heroku and another demo showing how Play Iteratees can be used to Stream
-data and combined with Websockets.
+data and combined with Comet.
 
 ### 1. Play and Heroku ###
 
@@ -45,15 +45,15 @@ changes.
 
 Here is some more info about [deploying with Git to Heroku](https://devcenter.heroku.com/articles/git) and [Play support in Heroku](https://devcenter.heroku.com/articles/play-support)
 
-### 2. A Reactive Mongo Example with Iteratees and Websockets ###
+### 2. A Reactive Mongo Example with Iteratees and Comet ###
 
-The second part of this demo showcases how play has native built-in support for WebSockets and how you may use Iteratees to reactively handle data streams.
+The second part of this demo showcases how play has native built-in support for Comet and how you may use Iteratees to reactively handle data streams.
 We will be connecting to the Twitter API, streaming tweets in real time and feeding the incoming stream asynchronously into a Mongo Collection.
 
 The Mongo collection is a special type of collection, [a capped collection](http://docs.mongodb.org/manual/core/capped-collections/) that may be tailed in order to receive callback notifications when there are incoming
 records added to it.
 
-We will be using Play [Iteratees and Enumerators](http://mandubian.com/2012/08/27/understanding-play2-iteratees-for-normal-humans/) to retrieve the keywords that are going to be sent by the user through a websocket and keep a constant enumerator
+We will be using Play [Iteratees and Enumerators](http://mandubian.com/2012/08/27/understanding-play2-iteratees-for-normal-humans/) to retrieve the keywords that are going to be sent by the user through a Comet and keep a constant enumerator
 over the capped collection that broadcasts incoming records back to the HTML client.
 
 First we will setup the MongoLab add-on on Heroku. The sandbox version gives you a free sandbox environment for development.
@@ -212,7 +212,7 @@ object MongoUtils {
 ```
 
 In the next part we are going to create a controller that uses Play's Iteratees to consume the Twitter Stream and forward any incoming Tweets into Mongo.
-We are also going to use Iteratees and Websockets to consume user input and enumerate the capped collection that will continuously notify the browser of
+We are also going to use Iteratees and Comet to consume user input and enumerate the capped collection that will continuously notify the browser of
 any inserted Tweets.
 
 Note that you could just use the Iteratee to stream back to the browser from Twitter but we use MongoDB not just to store tweets but to also notify any other
@@ -236,6 +236,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.api.QueryOpts
 import java.net.URLEncoder
 import utils.MongoUtils._
+import play.api.libs.Comet
 
 object Application extends Controller {
 
@@ -256,26 +257,23 @@ object Application extends Controller {
   }
 
   /**
-   * Websockets observing IO 
+   * Websockets observing IO
    */
-  def watchTweets = WebSocket.using[JsValue] { implicit request =>
+  def watchTweets(keywords : String) = Action { implicit request =>
 
-    //streamd from twitter passing the resulting stream to an Iteratee that inserts all incoming data in Mongo
-    def streamTweets(keyword : String) = WS.url(s"https://stream.twitter.com/1.1/statuses/filter.json?track=" + URLEncoder.encode(keyword, "UTF-8"))
+    Logger.debug(s"watchTweets invoked with: $keywords")
+
+    //streams from twitter passing the resulting stream to an Iteratee that inserts all incoming data in Mongo
+    WS.url(s"https://stream.twitter.com/1.1/statuses/filter.json?track=" + URLEncoder.encode(keywords, "UTF-8"))
       .sign(OAuthCalculator(Twitter.KEY, Twitter.sessionTokenPair.get))
       .postAndRetrieveStream("")(headers => Iteratee.foreach[Array[Byte]] { ba =>
       val msg = new String(ba, "UTF-8")
-      Logger.debug("received message: " + msg)
+      Logger.debug(s"received message: $msg")
       val tweet = Json.parse(msg)
       tweetsCollection.map(_.insert(tweet))
     })
 
-    //reads on the websocket for new keywords to stream
-    val in = Iteratee.foreach[JsValue] { json =>
-      streamTweets((json \ "keywords").as[String])
-    }
-
-    // Enumerates the capped collection streaming new results back to the websocket
+    // Enumerates the capped collection streaming new results back to the response
     val out = Enumerator.flatten(tweetsCollection.map {
       collection => collection
         // we want all the documents
@@ -286,8 +284,7 @@ object Application extends Controller {
         .enumerate
     })
 
-    // Websockets expect the Input iteratee and Output enumerator as return value
-    (in, out)
+    Ok.stream(out &> Comet(callback = "parent.cometMessage"))
 
   }
 
@@ -311,10 +308,10 @@ GET     /watchTweets                controllers.Application.watchTweets
 
 **HTML UI**
 
-Nothing interesting here, just a bunch of boilerplate HTML with a Bootstrap basic UI that binds HTML actions to Websockets calls all contained in a ScalaTemplate.
-The websocket sends keywords and receives tweets from the server in JSON format appending the received results to a list of tweets streamed so far.
-As a side effect since everyone accessing this app from a Browser has an open websocket to the server and all clients would be observing the same Mongo collection
-They will all see the same results realtime streaming before their eyes.
+Nothing interesting here, just a bunch of boilerplate HTML with a Bootstrap basic UI that binds HTML actions to Comet calls all contained in a ScalaTemplate.
+The Comet endpoint receives tweets from the server in JSON format appending the received results to a list of tweets streamed so far.
+As a side effect since everyone accessing this app from a Browser has an open connection to the server and all clients would be observing the same Mongo collection
+they will all see the same results realtime streaming before their eyes.
 
 *app/views/index.scala.html*
 
@@ -326,9 +323,9 @@ They will all see the same results realtime streaming before their eyes.
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <title>Comments</title>
+        <title>Twitter Mongo Streaming</title>
         <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")">
-        <script src="@routes.Assets.at("javascripts/jquery-1.9.0.min.js")" type="text/javascript" charset="utf-8"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
         <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
         <script src="//cdn.jsdelivr.net/jsrender/1.0pre35/jsrender.min.js"></script>
         <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
@@ -379,26 +376,27 @@ They will all see the same results realtime streaming before their eyes.
 
             <script type="text/javascript">
 
+                var cometMessage = function(event) {
+                    console.log('message:' + event);
+                    var tweet = event;
+                    if (tweet && tweet.user) {
+                       $('#list').prepend($("#tweetTemplate").render(tweet));
+                    }
+                }
+
                 $(document).ready(function(){
 
-                    var mongoWatcher = new WebSocket('@routes.Application.watchTweets().webSocketURL()');
-
-                    mongoWatcher.onmessage = function(evt) {
-                        var tweet = JSON.parse(evt.data);
-                        if (tweet && tweet.user) {
-                            $('#list').prepend($("#tweetTemplate").render(tweet));
-                        }
-                    };
-
-                    function watchTweets(keywords) {
-                        mongoWatcher.send(JSON.stringify({ "keywords" : keywords}));
-                    }
-
                     $('#runKeywordsButton').click(function(){
+
                         var keywords = $('#keywordsInput').val();
-                        watchTweets(keywords);
+
+                        $('#commetIframe').remove();
+
+                        $('body').append('<iframe width="700" scrolling="no" height="400" frameborder="0" seamless="seamless" id="commetIframe" src="@routes.Application.watchTweets("").absoluteURL()' + keywords + '"></iframe>');
+
                         return false;
                     });
+
                 });
 
             </script>
@@ -411,6 +409,7 @@ They will all see the same results realtime streaming before their eyes.
 
     </body>
 </html>
+
 ```
 
 Optionally you may setup your IDE for Scala and Play Development. We use [IntelliJ IDEA](http://www.jetbrains.com/idea/) at [47 Degrees](http://47deg.com). Simply run the following command to get all the

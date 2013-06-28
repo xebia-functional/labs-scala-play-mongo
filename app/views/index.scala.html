@@ -58,26 +58,27 @@
 
             <script type="text/javascript">
 
+                var cometMessage = function(event) {
+                    console.log('message:' + event);
+                    var tweet = event;
+                    if (tweet && tweet.user) {
+                       $('#list').prepend($("#tweetTemplate").render(tweet));
+                    }
+                }
+
                 $(document).ready(function(){
 
-                    var mongoWatcher = new WebSocket('@routes.Application.watchTweets().webSocketURL()');
-
-                    mongoWatcher.onmessage = function(evt) {
-                        var tweet = JSON.parse(evt.data);
-                        if (tweet && tweet.user) {
-                            $('#list').prepend($("#tweetTemplate").render(tweet));
-                        }
-                    };
-
-                    function watchTweets(keywords) {
-                        mongoWatcher.send(JSON.stringify({ "keywords" : keywords}));
-                    }
-
                     $('#runKeywordsButton').click(function(){
+
                         var keywords = $('#keywordsInput').val();
-                        watchTweets(keywords);
+
+                        $('#commetIframe').remove();
+
+                        $('body').append('<iframe width="700" scrolling="no" height="400" frameborder="0" seamless="seamless" id="commetIframe" src="@routes.Application.watchTweets("").absoluteURL()' + keywords + '"></iframe>');
+
                         return false;
                     });
+
                 });
 
             </script>

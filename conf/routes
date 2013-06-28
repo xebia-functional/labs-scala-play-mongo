@@ -11,4 +11,4 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 #
 GET     /auth                       controllers.Twitter.authenticate()
-GET     /watchTweets                controllers.Application.watchTweets
+GET     /watchTweets/:keywords      controllers.Application.watchTweets(keywords)
